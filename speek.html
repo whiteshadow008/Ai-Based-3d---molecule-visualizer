@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload 3D Molecule Reaction</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 20px;
+    }
+    model-viewer {
+      width: 90vw;
+      height: 70vh;
+      background: hsl(0, 74%, 6%);
+      border: 1px solid #ccc;
+    }
+    #controls {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🧪 Upload and View Chemical Reaction</h2>
+
+  <!-- File Input -->
+  <input type="file" id="fileInput" accept=".glb" />
+
+  <!-- Model Viewer -->
+  <model-viewer
+    id="viewer"
+    alt="3D Molecule"
+    ar
+    autoplay
+    auto-rotate
+    camera-controls
+    touch-action="pan-y"
+    shadow-intensity="1"
+    background-color="#fff"
+    environment-image="neutral">
+  </model-viewer>
+
+  <!-- Molecule Info -->
+  <p><strong>Name:</strong> <span id="molecule-name">--</span></p>
+  <p><strong>Formula:</strong> <span id="formula-text">--</span></p>
+
+  <!-- Animation Controls -->
+  <div id="controls">
+    <label for="animationSelect">Animation:</label>
+    <select id="animationSelect"></select>
+    <button id="playBtn">▶️ Play</button>
+    <button id="pauseBtn">⏸️ Pause</button>
+    <button id="stopBtn">⏹️ Stop</button>
+  </div>
+
+  <!-- Text to Speech -->
+  <div>
+    <h3>Explanation</h3>
+    <textarea id="tts-text" placeholder="Explain the reaction..." rows="3" cols="50"></textarea><br>
+    <button id="speak-btn">🔊 Speak</button>
+  </div>
+
+  <script>
+    const viewer = document.getElementById("viewer");
+    const fileInput = document.getElementById("fileInput");
+    const animationSelect = document.getElementById("animationSelect");
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    const moleculeFormulaMap = {
+      "methane": "CH4", "oxygen": "O2", "carbon_dioxide": "CO2", "water": "H2O"
+      // Add more mappings here
+    };
+
+    function formatFormula(formula) {
+      return formula.replace(/([0-9]+)/g, "<sub>$1</sub>");
+    }
+
+    fileInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file || !file.name.endsWith(".glb")) {
+        alert("Please upload a valid .glb file.");
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      viewer.src = url;
+
+      const moleculeKey = file.name.replace(".glb", "").toLowerCase();
+      const formula = moleculeFormulaMap[moleculeKey] || "Mixed / Unknown";
+      document.getElementById("molecule-name").textContent = moleculeKey;
+      document.getElementById("formula-text").innerHTML = formatFormula(formula);
+
+      // Wait for model to load then populate animation list
+      viewer.addEventListener("load", () => {
+        const animations = viewer.availableAnimations || [];
+
+        animationSelect.innerHTML = "";
+        if (animations.length > 0) {
+          animations.forEach(anim => {
+            const opt = document.createElement("option");
+            opt.value = anim;
+            opt.textContent = anim;
+            animationSelect.appendChild(opt);
+          });
+
+          // Default to "full" or first animation
+          const defaultAnim = animations.includes("full") ? "full" : animations[0];
+          animationSelect.value = defaultAnim;
+          viewer.animationName = defaultAnim;
+          viewer.play();
+        } else {
+          const opt = document.createElement("option");
+          opt.value = "";
+          opt.textContent = "No animations found";
+          animationSelect.appendChild(opt);
+        }
+      }, { once: true });
+    });
+viewer.addEventListener("load", () => {
+  const animations = viewer.availableAnimations;
+  animationSelect.innerHTML = "";
+
+  if (animations.length > 0) {
+    // Add "Full Animation" if it exists
+    if (animations.includes("Full_Reaction")) {
+      const fullOpt = document.createElement("option");
+      fullOpt.value = "Full_Reaction";
+      fullOpt.textContent = "🧪 Full Animation";
+      animationSelect.appendChild(fullOpt);
+    }
+
+    animations.forEach(anim => {
+      const opt = document.createElement("option");
+      opt.value = anim;
+      opt.textContent = anim;
+      animationSelect.appendChild(opt);
+    });
+
+    // Set default to Full if available
+    viewer.animationName = animations.includes("Full_Reaction") ? "Full_Reaction" : animations[0];
+    viewer.play();
+  } else {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "No animations found";
+    animationSelect.appendChild(opt);
+  }
+});
+
+    // Animation controls
+    animationSelect.addEventListener("change", () => {
+      viewer.animationName = animationSelect.value;
+      viewer.play();
+    });
+
+    playBtn.addEventListener("click", () => viewer.play());
+    pauseBtn.addEventListener("click", () => viewer.pause());
+    stopBtn.addEventListener("click", () => {
+      viewer.pause();
+      viewer.currentTime = 0;
+    });
+
+    // Text-to-speech
+    document.getElementById("speak-btn").addEventListener("click", () => {
+      const text = document.getElementById("tts-text").value;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      window.speechSynthesis.speak(utterance);
+    });
+  </script>
+</body>
+</html>

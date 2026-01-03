@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Molecule Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+
+    .content-wrapper {
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .box {
+      width: 400px;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 15px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(5px);
+      text-align: center;
+    }
+
+    .box h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: #fff;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    #loading-text {
+      margin-top: 20px;
+      font-size: 16px;
+      color: white;
+      display: none;
+    }
+
+    #manual-link {
+      margin-top: 20px;
+      display: none;
+    }
+
+    #manual-link p {
+      color: white;
+    }
+
+    #manual-link button {
+      background-color: #28a745;
+    }
+
+    #manual-link button:hover {
+      background-color: #1e7e34;
+    }
+
+    .error {
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ Flask-based Background Video path -->
+  <video class="bg-video" autoplay muted loop playsinline>
+    <source src="{{ url_for('static', filename='bg.mp4') }}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- 💡 Content Box -->
+  <div class="content-wrapper">
+    <div class="box">
+      <h2>Enter Molecule Name</h2>
+
+      <form id="molForm" method="POST" onsubmit="startProcessing(); return false;">
+        <input type="text" name="molecule" id="molecule-input" placeholder="e.g., methane" required>
+        <button type="submit">Generate</button>
+      </form>
+
+      <div id="loading-text">⏳ Processing molecule... You will be redirected shortly.</div>
+      <div id="manual-link">
+        <p>If you're not redirected, you can go manually:</p>
+        <button onclick="goToViewer()">Go to Viewer</button>
+      </div>
+      <div id="error-text" class="error"></div>
+    </div>
+  </div>
+
+  <!-- 🚀 Script -->
+  <script>
+    let lastRedirectURL = "";
+
+    function startProcessing() {
+      const moleculeInput = document.getElementById("molecule-input");
+      const molecule = moleculeInput.value.trim().toLowerCase();
+      const loadingText = document.getElementById("loading-text");
+      const manualLink = document.getElementById("manual-link");
+      const errorText = document.getElementById("error-text");
+
+      if (!molecule) {
+        errorText.textContent = "Please enter a molecule name.";
+        return;
+      }
+
+      errorText.textContent = "";
+      loadingText.style.display = "block";
+      manualLink.style.display = "none";
+
+      const formData = new FormData();
+      formData.append("molecule", molecule);
+
+      fetch("/", {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          lastRedirectURL = data.viewer_url;
+          manualLink.style.display = "block";
+          setTimeout(() => {
+            window.location.href = lastRedirectURL;
+          }, 2000);
+        } else {
+          loadingText.style.display = "none";
+          errorText.textContent = data.error || "Unknown error occurred.";
+        }
+      })
+      .catch(err => {
+        loadingText.style.display = "none";
+        errorText.textContent = "Something went wrong.";
+        console.error("Error:", err);
+      });
+    }
+
+    function goToViewer() {
+      if (lastRedirectURL) {
+        window.location.href = lastRedirectURL;
+      }
+    }
+  </script>
+</body>
+</html>

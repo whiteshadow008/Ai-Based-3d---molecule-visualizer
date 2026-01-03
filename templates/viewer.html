@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Molecule Viewer</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      margin: 20px;
+      text-align: center;
+    }
+    model-viewer {
+      width: 90vw;
+      height: 80vh;
+      border: 1px solid #ccc;
+      background: #111;
+    }
+    #formula-display {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      background: rgba(255,255,255,0.8);
+      padding: 8px 15px;
+      border-radius: 8px;
+    }
+    button {
+      margin: 15px;
+      padding: 10px 16px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+      #explanation-box {
+      max-width: 800px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 25px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      text-align: left;
+      line-height: 1.6;}
+  </style>
+</head>
+
+<body>
+  <header>
+    <h2>3D Model: {{ molecule|capitalize }}</h2>
+    <div id="formula-display">
+      Formula: <strong id="formula-text">Loading...</strong>
+    </div>
+      <div id="explanation-box">
+    <h3>About {{ molecule|capitalize }}</h3>
+    <p>{{ explanation }}</p>
+  </div>
+  <div style="margin-top: 20px;">
+  <button onclick="speakExplanation()">🔊 Speak Explanation</button>
+</div>
+
+  </header>
+
+  <!-- 3D viewer with animation enabled -->
+  <model-viewer
+    id="molviewer"
+    src="/outputs/{{ molecule }}.glb"
+    alt="{{ molecule }}"
+    ar
+    auto-rotate
+    autoplay
+    animation-name="Scene"
+    camera-controls
+    touch-action="pan-y"
+    environment-image="neutral"
+    shadow-intensity="1"
+    background-color="#fff">
+  </model-viewer>
+<!-- Add this inside <body>, preferably below the model-viewer -->
+<div style="margin-top: 20px;">
+  <a href="/outputs/{{ molecule }}.glb" download>
+    <button style="padding: 10px 20px; font-size: 16px;">⬇️ Download 3D Model (.glb)</button>
+  </a>
+</div>
+
+  <!-- Animation toggle button -->
+
+  <script>
+    const molecule = "{{ molecule }}".toLowerCase();
+    const formulaMap = {
+      "water": "H2O", "methane": "CH4", "ethane": "C2H6", "propane": "C3H8", "butane": "C4H10",
+      "pentane": "C5H12", "hexane": "C6H14", "ethene": "C2H4", "ethyne": "C2H2", "benzene": "C6H6",
+      "methanol": "CH3OH", "ethanol": "C2H5OH", "propanol": "C3H7OH", "butanol": "C4H9OH",
+      "isopropanol": "C3H8O", "glycerol": "C3H8O3", "formic acid": "HCOOH", "acetic acid": "CH3COOH",
+      "propanoic acid": "C2H5COOH", "butanoic acid": "C3H7COOH", "benzoic acid": "C6H5COOH",
+      "methylamine": "CH3NH2", "ethylamine": "C2H5NH2", "aniline": "C6H5NH2", "formaldehyde": "CH2O",
+      "acetaldehyde": "CH3CHO", "acetone": "C3H6O", "glucose": "C6H12O6", "fructose": "C6H12O6",
+      "sucrose": "C12H22O11", "glycine": "C2H5NO2", "alanine": "C3H7NO2", "valine": "C5H11NO2",
+      "leucine": "C6H13NO2", "phenylalanine": "C9H11NO2", "tryptophan": "C11H12N2O2",
+      "ammonia": "NH3", "carbon dioxide": "CO2", "nitric acid": "HNO3", "sulfuric acid": "H2SO4",
+      "phosphoric acid": "H3PO4", "hydrogen peroxide": "H2O2", "ozone": "O3", "adenine": "C5H5N5",
+      "guanine": "C5H5N5O", "cytosine": "C4H5N3O", "uracil": "C4H4N2O2", "thymine": "C5H6N2O2",
+      "cholesterol": "C27H46O", "caffeine": "C8H10N4O2", "nicotine": "C10H14N2", "oxygen": "O2",
+      "hydrogen": "H2", "nitrogen": "N2", "chlorine": "Cl2", "fluorine": "F2",
+      "aspirin": "C9H8O4", "paracetamol": "C8H9NO2", "acetylsalicylic acid": "C9H8O4"
+    };
+
+    function formatFormula(formula) {
+      return formula.replace(/([0-9]+)/g, "<sub>$1</sub>");
+    }
+
+    const formula = formulaMap[molecule] || "Unknown";
+    document.getElementById("formula-text").innerHTML = formatFormula(formula);
+
+    // Animation toggle
+    const viewer = document.getElementById('molviewer');
+    let playing = true;
+
+    function toggleAnimation() {
+      playing = !playing;
+      if (playing) {
+        viewer.play();
+      } else {
+        viewer.pause();
+      }
+    }
+
+  function speakExplanation() {
+    const text = `{{ explanation | safe }}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9; // slower rate for clarity
+    utterance.pitch = 1;
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+  }
+
+
+  </script>
+</body>
+</html>
