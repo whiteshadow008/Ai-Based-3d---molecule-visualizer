@@ -35,4 +35,7 @@ The system integrates **Python automation, Blender scripting, and basic web inte
 [Note : You need to upload a llm model for it's explaination]
 ## 📂 Project Structure
 <img width="330" height="341" alt="image" src="https://github.com/user-attachments/assets/a586da85-89af-420c-a1ab-99ee62739584" />
+sample output:
+
+
 
